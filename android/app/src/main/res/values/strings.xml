@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FIAA</string>
+    <string name="title_activity_main">FIAA</string>
+    <string name="package_name">com.fiaa.app</string>
+    <string name="custom_url_scheme">com.fiaa.app</string>
+</resources>
