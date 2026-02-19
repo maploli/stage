@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Download, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { generateBadgePDF } from "@/utils/badgeGenerator";
+import { motion } from "framer-motion";
 
 const MySpace = () => {
     const [email, setEmail] = useState("");
@@ -17,17 +20,18 @@ const MySpace = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            // In a real app, this would be a proper login. 
-            // For this version, we search by email to show status.
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/inscriptions/check?email=${email}`);
-            const data = await res.json();
+            const { data, error } = await supabase
+                .from('inscriptions')
+                .select('*')
+                .eq('email', email)
+                .single();
             
-            if (res.ok) {
-                setParticipant(data.data);
-                toast.success("Dossier trouvé !");
-            } else {
+            if (error) {
                 toast.error("Aucune inscription trouvée avec cet email.");
                 setParticipant(null);
+            } else {
+                setParticipant(data);
+                toast.success("Dossier trouvé !");
             }
         } catch (err) {
             toast.error("Erreur de connexion.");
@@ -103,7 +107,7 @@ const MySpace = () => {
                                     <Button 
                                         size="lg" 
                                         className="bg-emerald-600 hover:bg-emerald-700"
-                                        onClick={() => window.open(`${import.meta.env.VITE_API_URL}/inscriptions/${participant.id}/badge`, '_blank')}
+                                        onClick={() => generateBadgePDF(participant)}
                                     >
                                         <Download className="mr-2 h-4 w-4" />
                                         Télécharger mon Badge Officiel

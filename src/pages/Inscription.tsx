@@ -132,7 +132,7 @@ const Inscription = () => {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
+      toast.error("Erreur de connexion. Veuillez vérifier votre connexion et la configuration (clés Supabase).");
     }
   };
 
