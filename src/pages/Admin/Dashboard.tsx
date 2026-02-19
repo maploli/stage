@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabaseClient";
+import { generateBadgePDF } from "@/utils/badgeGenerator";
 
 interface InscriptionData {
-  id: number;
+  id: string; // UUID
   nom: string;
   prenom: string;
   email: string;
@@ -27,19 +29,19 @@ interface InscriptionData {
   region?: string;
   fonction?: string;
   besoins?: string;
-  createdAt: string;
+  created_at: string;
   status: string;
-  badgeId: string;
-  specificData: any;
+  badge_id: string;
+  specific_data: any;
 }
 
 interface MessageData {
-  id: number;
+  id: string; // UUID
   nom: string;
   email: string;
   sujet: string;
   message: string;
-  createdAt: string;
+  created_at: string;
 }
 
 const Dashboard = () => {
@@ -48,56 +50,49 @@ const Dashboard = () => {
     const [messages, setMessages] = useState<MessageData[]>([]);
 
     useEffect(() => {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            navigate('/admin');
-            return;
-        }
-
+        checkUser();
         fetchData();
-    }, [navigate]);
+    }, []);
+
+    const checkUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            navigate('/admin');
+        }
+    };
 
     const fetchData = async () => {
         try {
             const [inscriptionsRes, messagesRes] = await Promise.all([
-                fetch(`${import.meta.env.VITE_API_URL}/inscriptions`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-                }),
-                fetch(`${import.meta.env.VITE_API_URL}/messages`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-                })
+                supabase.from('inscriptions').select('*').order('created_at', { ascending: false }),
+                supabase.from('contacts').select('*').order('created_at', { ascending: false })
             ]);
 
-            if (inscriptionsRes.ok) setInscriptions(await inscriptionsRes.json());
-            if (messagesRes.ok) setMessages(await messagesRes.json());
+            if (inscriptionsRes.data) setInscriptions(inscriptionsRes.data as any);
+            if (messagesRes.data) setMessages(messagesRes.data as any);
         } catch (error) {
             toast.error("Erreur de chargement des données");
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('adminToken');
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         navigate('/admin');
     };
 
-    const updateStatus = async (id: number, status: string) => {
+    const updateStatus = async (id: string, status: string) => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/inscriptions/${id}/status`, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                },
-                body: JSON.stringify({ status })
-            });
-            if (res.ok) {
-                toast.success(`Statut mis à jour : ${status}`);
-                fetchData(); // Refresh list
-            } else {
-                toast.error("Erreur mise à jour statut");
-            }
+            const { error } = await supabase
+                .from('inscriptions')
+                .update({ status })
+                .eq('id', id);
+
+            if (error) throw error;
+            
+            toast.success(`Statut mis à jour : ${status}`);
+            fetchData(); // Refresh list
         } catch (error) {
-            toast.error("Erreur serveur");
+            toast.error("Erreur mise à jour statut");
         }
     };
 
@@ -139,7 +134,7 @@ const Dashboard = () => {
                                     <TableBody>
                                         {inscriptions.map((item) => (
                                             <TableRow key={item.id}>
-                                                <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                                                <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                                                 <TableCell>{item.prenom} {item.nom}</TableCell>
                                                 <TableCell>{item.email}</TableCell>
                                                 <TableCell>{item.profile}</TableCell>
@@ -171,7 +166,7 @@ const Dashboard = () => {
                                                             </Button>
                                                         )}
                                                         {item.status === 'APPROVED' && (
-                                                            <Button variant="outline" size="sm" className="h-8" onClick={() => window.open(`${import.meta.env.VITE_API_URL}/badges/${item.badgeId}`, '_blank')}>
+                                                            <Button variant="outline" size="sm" className="h-8" onClick={() => generateBadgePDF(item)}>
                                                                 Badge
                                                             </Button>
                                                         )}
@@ -192,7 +187,7 @@ const Dashboard = () => {
                                                                     <div className="grid grid-cols-4 items-center gap-4">
                                                                         <span className="font-bold col-span-4">Données Spécifiques :</span>
                                                                         <pre className="col-span-4 bg-muted p-2 rounded-md text-sm overflow-auto max-h-[200px]">
-                                                                            {JSON.stringify(item.specificData, null, 2)}
+                                                                            {JSON.stringify(item.specific_data, null, 2)}
                                                                         </pre>
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -233,7 +228,7 @@ const Dashboard = () => {
                                     <TableBody>
                                         {messages.map((item) => (
                                             <TableRow key={item.id}>
-                                                <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
+                                                <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                                                 <TableCell>{item.nom}</TableCell>
                                                 <TableCell>{item.email}</TableCell>
                                                 <TableCell>{item.sujet}</TableCell>

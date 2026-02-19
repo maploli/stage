@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { supabase } from "@/lib/supabaseClient";
+import { generateBadgePDF } from "@/utils/badgeGenerator";
+
 type ProfileType = "agriculteur" | "startup" | "partenaire" | "visiteur" | "media" | null;
 
 const profiles = [
@@ -105,25 +108,31 @@ const Inscription = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/inscriptions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...formData, profile: selectedProfile }),
-      });
+      const { data, error } = await supabase
+        .from('inscriptions')
+        .insert([{ 
+          ...formData, 
+          profile: selectedProfile,
+          specific_data: {
+            superficie: formData.superficie,
+            production: formData.production,
+            stage: formData.stage,
+            pitchDeck: formData.pitchDeck
+          }
+        }])
+        .select()
+        .single();
 
-      if (response.ok) {
-        const data = await response.json();
-        setRegistrationId(data.data.badgeId); // Store badgeId instead of id
+      if (error) throw error;
+
+      if (data) {
+        setRegistrationId(data.badge_id); // Note: badge_id in snake_case if using standard Postgres
         setStep(3);
         toast.success("Inscription soumise avec succès !");
-      } else {
-        toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
       }
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error("Erreur de connexion au serveur.");
+      toast.error("Erreur lors de l'inscription. Veuillez réessayer.");
     }
   };
 
@@ -429,7 +438,16 @@ const Inscription = () => {
                         size="lg" 
                         variant="default"
                         className="bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => window.open(`${import.meta.env.VITE_API_URL}/badges/${registrationId}`, '_blank')}
+                        onClick={() => generateBadgePDF({
+                            prenom: formData.prenom,
+                            nom: formData.nom,
+                            profile: selectedProfile,
+                            organisation: formData.organisation,
+                            fonction: formData.fonction,
+                            region: formData.region,
+                            badge_id: registrationId,
+                            status: 'APPROVED' // Provisoirement approuvé pour le badge
+                        })}
                     >
                         Télécharger mon Badge
                     </Button>

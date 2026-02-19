@@ -19,6 +19,7 @@ import {
   Facebook, Twitter, Linkedin, Instagram
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -35,23 +36,17 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        const response = await fetch('http://localhost:3000/api/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-        });
+        const { error } = await supabase
+            .from('contacts')
+            .insert([formData]);
 
-        if (response.ok) {
-            toast.success("Message envoyé avec succès ! Nous vous répondrons sous 48h.");
-            setFormData({ nom: "", email: "", sujet: "", message: "" });
-        } else {
-            toast.error("Erreur lors de l'envoi du message.");
-        }
+        if (error) throw error;
+
+        toast.success("Message envoyé avec succès ! Nous vous répondrons sous 48h.");
+        setFormData({ nom: "", email: "", sujet: "", message: "" });
     } catch (error) {
         console.error("Erreur:", error);
-        toast.error("Erreur de connexion au serveur.");
+        toast.error("Erreur lors de l'envoi du message.");
     }
   };
 

@@ -5,31 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Layout } from "@/components/layout/Layout";
+import { supabase } from "@/lib/supabaseClient";
 
 const Login = () => {
-    const [username, setUsername] = useState("");
+    const [username, setUsername] = useState(""); // Note: Supabase uses email
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: username, // Assuming username is email or needs to be email
+                password: password,
             });
-            const data = await response.json();
 
-            if (data.success) {
-                localStorage.setItem('adminToken', data.token);
+            if (error) throw error;
+
+            if (data.session) {
                 toast.success('Connexion réussie');
                 navigate('/admin/dashboard');
-            } else {
-                toast.error('Identifiants incorrects');
             }
-        } catch (error) {
-            toast.error('Erreur de connexion');
+        } catch (error: any) {
+            toast.error(error.message || 'Identifiants incorrects');
         }
     };
 
