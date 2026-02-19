@@ -132,54 +132,114 @@ app.get('/api/inscriptions/check', async (req, res) => {
     }
 });
 
-// Generate Badge PDF
+// Helper Function for Badge Generation
+const generateBadgePDF = async (inscription, res) => {
+    const doc = new PDFDocument({ size: 'A6', layout: 'landscape', margin: 0 }); // No default margin for full bleed
+    const filename = `badge-${inscription.prenom}-${inscription.nom}.pdf`;
+
+    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-type', 'application/pdf');
+
+    doc.pipe(res);
+
+    // --- Badge Design ---
+
+    // 1. Profile Colors
+    const profileColors = {
+        'agriculteur': '#059669', // Emerald 600
+        'startup': '#2563EB',     // Blue 600
+        'partenaire': '#D97706',  // Amber 600 (Gold-ish)
+        'visiteur': '#9333EA',    // Purple 600
+        'media': '#EAB308',       // Yellow 500
+    };
+    const baseColor = profileColors[inscription.profile] || '#166534'; // Default Green
+
+    // 2. Background
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill('#FFFFFF'); 
+    
+    // 3. Colored Sidebar (Strip)
+    doc.rect(0, 0, 30, doc.page.height).fill(baseColor);
+    
+    // 4. Header Bar
+    doc.rect(30, 0, doc.page.width - 30, 40).fill('#166534'); // FIAA Green
+    doc.fillColor('white').fontSize(16).font('Helvetica-Bold').text('FIAA 2026', 40, 12, { align: 'left' });
+    doc.fontSize(10).font('Helvetica').text('15-20 Avril • Lomé, Togo', 0, 15, { align: 'right', width: doc.page.width - 20 });
+
+    // 5. Participant Info
+    const startX = 50;
+    let currentY = 60;
+
+    // Name
+    doc.fillColor('black').fontSize(22).font('Helvetica-Bold').text(`${inscription.prenom}`, startX, currentY);
+    currentY += 25;
+    doc.text(`${inscription.nom.toUpperCase()}`, startX, currentY);
+    currentY += 30;
+
+    // Profile Badge
+    doc.rect(startX, currentY - 5, 120, 25).fill(baseColor);
+    doc.fillColor('white').fontSize(12).font('Helvetica-Bold').text(
+        (inscription.profile ? inscription.profile.toUpperCase() : 'VISITEUR'), 
+        startX, currentY + 2, { width: 120, align: 'center' }
+    );
+    
+    // Reset for Details
+    currentY += 35;
+    doc.fillColor('#374151'); // Gray 700
+
+    // Box for Details
+    doc.fontSize(10).font('Helvetica');
+    if (inscription.organisation) {
+        doc.text(inscription.organisation, startX, currentY);
+        currentY += 14;
+    }
+    if (inscription.fonction) {
+        doc.fillColor('#6B7280').text(inscription.fonction, startX, currentY); // Gray 500
+        currentY += 14;
+    }
+    if (inscription.region) {
+         doc.fillColor('#6B7280').text(inscription.region.toUpperCase(), startX, currentY);
+    }
+
+    // 6. QR Code (Right Side)
+    const qrCodeData = JSON.stringify({
+        id: inscription.id,
+        badgeId: inscription.badgeId,
+        name: `${inscription.prenom} ${inscription.nom}`,
+        profile: inscription.profile,
+        valid: inscription.status === 'APPROVED'
+    });
+    
+    try {
+        const qrImage = await QRCode.toDataURL(qrCodeData);
+        // Position QR code on the right
+        doc.image(qrImage, doc.page.width - 90, 60, { width: 70 });
+        
+        // Badge ID below QR
+        doc.fontSize(8).fillColor('#9CA3AF').text(
+            `ID: ${inscription.badgeId.split('-')[0]}`, 
+            doc.page.width - 90, 
+            135, 
+            { width: 70, align: 'center' }
+        );
+    } catch (err) {
+        console.error("QR Gen Error", err);
+    }
+
+    // 7. Footer
+    const footerY = doc.page.height - 20;
+    doc.fontSize(8).fillColor('#166534').text('www.fiaa-togo.com', 30, footerY, { align: 'center', width: doc.page.width - 30 });
+
+    doc.end();
+};
+
+// Generate Badge PDF (Protected)
 app.get('/api/inscriptions/:id/badge', authenticateToken, async (req, res) => {
     try {
         const inscription = await Inscription.findByPk(req.params.id);
         if (!inscription) {
             return res.status(404).json({ message: 'Inscription not found' });
         }
-
-        // Logic Check: Only allow download if Approved (skipped for prototype simplicity/admin access)
-        // if (inscription.status !== 'APPROVED') ...
-
-        const doc = new PDFDocument({ size: 'A6', layout: 'landscape' }); // Badge size
-        const filename = `badge-${inscription.prenom}-${inscription.nom}.pdf`;
-
-        res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-type', 'application/pdf');
-
-        doc.pipe(res);
-
-        // Badge Design
-        doc.rect(0, 0, doc.page.width, doc.page.height).fill('#F0FDF4'); // Light green background
-        
-        // Header
-        doc.rect(0, 0, doc.page.width, 30).fill('#166534'); // Dark green header
-        doc.fillColor('white').fontSize(14).text('FIAA 2026', 10, 8, { align: 'center' });
-
-        // Content
-        doc.fillColor('black').fontSize(18).font('Helvetica-Bold').text(`${inscription.prenom} ${inscription.nom.toUpperCase()}`, 0, 50, { align: 'center' });
-        doc.fontSize(12).font('Helvetica').text(inscription.profile ? inscription.profile.toUpperCase() : 'VISITEUR', 0, 75, { align: 'center' });
-        if (inscription.organisation) {
-            doc.fontSize(10).text(inscription.organisation, 0, 90, { align: 'center' });
-        }
-
-        // QR Code
-        const qrCodeData = JSON.stringify({
-            id: inscription.id,
-            badgeId: inscription.badgeId,
-            name: `${inscription.prenom} ${inscription.nom}`,
-            profile: inscription.profile
-        });
-        const qrImage = await QRCode.toDataURL(qrCodeData);
-        doc.image(qrImage, doc.page.width / 2 - 25, 110, { width: 50 });
-
-        // Footer
-        doc.fontSize(8).text(`ID: ${inscription.badgeId.split('-')[0]}...`, 0, 170, { align: 'center' });
-
-        doc.end();
-
+        await generateBadgePDF(inscription, res);
     } catch (error) {
         console.error('Error generating badge:', error);
         res.status(500).json({ message: 'Error generating badge' });
@@ -195,40 +255,7 @@ app.get('/api/badges/:badgeId', async (req, res) => {
         if (!inscription) {
             return res.status(404).json({ message: 'Badge not found' });
         }
-
-        // Generate PDF (Same Logic)
-        const doc = new PDFDocument({ size: 'A6', layout: 'landscape' });
-        const filename = `badge-${inscription.prenom}-${inscription.nom}.pdf`;
-
-        res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-type', 'application/pdf');
-
-        doc.pipe(res);
-
-        // Badge Design
-        doc.rect(0, 0, doc.page.width, doc.page.height).fill('#F0FDF4');
-        
-        doc.rect(0, 0, doc.page.width, 30).fill('#166534');
-        doc.fillColor('white').fontSize(14).text('FIAA 2026', 10, 8, { align: 'center' });
-
-        doc.fillColor('black').fontSize(18).font('Helvetica-Bold').text(`${inscription.prenom} ${inscription.nom.toUpperCase()}`, 0, 50, { align: 'center' });
-        doc.fontSize(12).font('Helvetica').text(inscription.profile ? inscription.profile.toUpperCase() : 'VISITEUR', 0, 75, { align: 'center' });
-        if (inscription.organisation) {
-            doc.fontSize(10).text(inscription.organisation, 0, 90, { align: 'center' });
-        }
-
-        const qrCodeData = JSON.stringify({
-            id: inscription.id,
-            badgeId: inscription.badgeId,
-            name: `${inscription.prenom} ${inscription.nom}`,
-            profile: inscription.profile
-        });
-        const qrImage = await QRCode.toDataURL(qrCodeData);
-        doc.image(qrImage, doc.page.width / 2 - 25, 110, { width: 50 });
-
-        doc.fontSize(8).text(`ID: ${inscription.badgeId.split('-')[0]}...`, 0, 170, { align: 'center' });
-
-        doc.end();
+        await generateBadgePDF(inscription, res);
 
     } catch (error) {
         console.error('Error generating badge:', error);
