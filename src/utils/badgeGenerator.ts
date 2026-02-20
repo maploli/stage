@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit/js/pdfkit.standalone';
 import blobStream from 'blob-stream';
 import QRCode from 'qrcode';
 
