@@ -2,7 +2,7 @@ import PDFDocument from 'pdfkit/js/pdfkit.standalone';
 import blobStream from 'blob-stream';
 import QRCode from 'qrcode';
 
-export const generateBadgePDF = async (inscription: any): Promise<void> => {
+export const generateBadgeBlob = async (inscription: any): Promise<Blob> => {
     return new Promise(async (resolve, reject) => {
         try {
             const doc = new PDFDocument({ size: 'A6', layout: 'landscape', margin: 0 });
@@ -87,12 +87,7 @@ export const generateBadgePDF = async (inscription: any): Promise<void> => {
 
             stream.on('finish', () => {
                 const blob = stream.toBlob('application/pdf');
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `badge-${inscription.prenom}-${inscription.nom}.pdf`;
-                link.click();
-                resolve();
+                resolve(blob);
             });
 
         } catch (error) {
@@ -100,4 +95,13 @@ export const generateBadgePDF = async (inscription: any): Promise<void> => {
             reject(error);
         }
     });
+};
+
+export const generateBadgePDF = async (inscription: any): Promise<void> => {
+    const blob = await generateBadgeBlob(inscription);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `badge-${inscription.prenom}-${inscription.nom}.pdf`;
+    link.click();
 };

@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabaseClient";
-import { generateBadgePDF } from "@/utils/badgeGenerator";
+import { generateBadgePDF, generateBadgeBlob } from "@/utils/badgeGenerator";
+import { sendApprovalEmail } from "@/lib/notificationService";
 
 interface InscriptionData {
   id: string; // UUID
@@ -33,6 +34,8 @@ interface InscriptionData {
   status: string;
   badge_id: string;
   specific_data: any;
+  email_sent?: boolean;
+  email_sent_at?: string;
 }
 
 interface MessageData {
@@ -82,16 +85,46 @@ const Dashboard = () => {
 
     const updateStatus = async (id: string, status: string) => {
         try {
-            const { error } = await supabase
+            // 1. Update status in database
+            const { error: updateError } = await supabase
                 .from('inscriptions')
                 .update({ status })
                 .eq('id', id);
 
-            if (error) throw error;
+            if (updateError) throw updateError;
             
             toast.success(`Statut mis à jour : ${status}`);
+
+            // 2. If status is APPROVED, send the email
+            if (status === 'APPROVED') {
+                const inscription = inscriptions.find(i => i.id === id);
+                if (inscription && !inscription.email_sent) {
+                    const emailId = toast.loading("Génération du badge et envoi du mail...");
+                    
+                    try {
+                        const blob = await generateBadgeBlob(inscription);
+                        await sendApprovalEmail(inscription, blob);
+                        
+                        // Update email status in DB
+                        await supabase
+                            .from('inscriptions')
+                            .update({ 
+                                email_sent: true, 
+                                email_sent_at: new Date().toISOString() 
+                            })
+                            .eq('id', id);
+
+                        toast.success("Email envoyé avec succès !", { id: emailId });
+                    } catch (emailError) {
+                        console.error("Email sending failure:", emailError);
+                        toast.error("Erreur d'envoi du mail (vérifiez votre clé Resend)", { id: emailId });
+                    }
+                }
+            }
+
             fetchData(); // Refresh list
         } catch (error) {
+            console.error("Update error:", error);
             toast.error("Erreur mise à jour statut");
         }
     };
@@ -140,12 +173,19 @@ const Dashboard = () => {
                                                 <TableCell>{item.profile}</TableCell>
                                                 <TableCell>{item.organisation}</TableCell>
                                                 <TableCell>
-                                                    <span className={`px-2 py-1 rounded text-xs font-semibold
-                                                        ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
-                                                          item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
-                                                          'bg-yellow-100 text-yellow-800'}`}>
-                                                        {item.status || 'PENDING'}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`px-2 py-1 rounded text-xs font-semibold w-fit
+                                                            ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
+                                                              item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                                                              'bg-yellow-100 text-yellow-800'}`}>
+                                                            {item.status || 'PENDING'}
+                                                        </span>
+                                                        {item.email_sent && (
+                                                            <span className="text-[10px] text-green-600 flex items-center">
+                                                                ✅ Mail envoyé
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
