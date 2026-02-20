@@ -15,8 +15,13 @@ try {
   supabaseInstance = createClient('https://placeholder.supabase.co', 'placeholder');
 }
 
+const isProduction = import.meta.env.PROD;
+
 if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_URL.includes('your-project')) {
-  console.warn('Supabase credentials are missing or invalid. Please update your .env file.');
+  const message = isProduction 
+    ? 'ERREUR CRITIQUE: Les variables d\'environnement Supabase sont manquantes dans la production. Vérifiez la configuration des variables d\'environnement (VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY) dans votre tableau de bord Netlify.'
+    : 'Supabase credentials are missing or invalid. Please update your .env file.';
+  console.error(message);
 }
 
 export const supabase = supabaseInstance;
