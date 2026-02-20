@@ -111,7 +111,14 @@ const Inscription = () => {
       const { data, error } = await supabase
         .from('inscriptions')
         .insert([{ 
-          ...formData, 
+          nom: formData.nom,
+          prenom: formData.prenom,
+          email: formData.email,
+          telephone: formData.telephone,
+          region: formData.region,
+          organisation: formData.organisation,
+          fonction: formData.fonction,
+          besoins: formData.besoins,
           profile: selectedProfile,
           specific_data: {
             superficie: formData.superficie,
