@@ -13,6 +13,7 @@ import {
     LogOut, LayoutDashboard, FileText
 } from "lucide-react";
 import { generateBadgePDF } from "@/utils/badgeGenerator";
+import { supabase } from "@/lib/supabaseClient";
 import { motion } from "framer-motion";
 
 const MySpace = () => {
@@ -21,13 +22,41 @@ const MySpace = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const userJson = sessionStorage.getItem('current_user');
-        if (!userJson) {
-            navigate('/login');
-        } else {
-            setParticipant(JSON.parse(userJson));
-        }
-        setLoading(false);
+        const fetchUserData = async () => {
+            const userJson = sessionStorage.getItem('current_user');
+            if (!userJson) {
+                navigate('/login');
+                setLoading(false);
+                return;
+            }
+
+            const localUser = JSON.parse(userJson);
+            
+            try {
+                // Fetch fresh data from Supabase to catch admin updates
+                const { data, error } = await supabase
+                    .from('inscriptions')
+                    .select('*')
+                    .eq('id', localUser.id)
+                    .single();
+
+                if (data && !error) {
+                    setParticipant(data);
+                    // Update session storage with fresh data
+                    sessionStorage.setItem('current_user', JSON.stringify(data));
+                } else {
+                    // Fallback to local data if fetch fails
+                    setParticipant(localUser);
+                }
+            } catch (err) {
+                console.error("Error refreshing user data:", err);
+                setParticipant(localUser);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
     }, [navigate]);
 
     const handleLogout = () => {
