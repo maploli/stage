@@ -1,16 +1,27 @@
 import { Resend } from 'resend';
 
-// Accessing the API key from environment variables
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export default async function handler(req: any, res: any) {
-  // Vercel handles the method check differently
+  console.log('--- Email Function Triggered ---');
+  console.log('Method:', req.method);
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
     const { inscription, type, pdfBase64 } = req.body;
+    
+    if (!inscription || !type) {
+        console.error('Missing required fields');
+        return res.status(400).json({ error: 'Missing inscription or type' });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+        console.error('RESEND_API_KEY is not defined in environment variables');
+        return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     let subject = "";
     let htmlContent = "";
@@ -27,13 +38,11 @@ export default async function handler(req: any, res: any) {
             <h2 style="color: #059669; margin-top: 0;">Félicitations ${inscription.prenom} !</h2>
             <p>Nous avons le plaisir de vous informer que votre inscription au <strong>Festival International de l'Agriculture et de l'Agroalimentaire (FIAA 2026)</strong> a été officiellement <strong>validée</strong>.</p>
             <p>Vous trouverez votre badge officiel en pièce jointe de ce mail. Nous vous recommandons de l'imprimer ou de le conserver sur votre téléphone pour fluidifier votre accès à l'événement.</p>
-            
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0;">
               <h3 style="margin-top: 0; font-size: 16px; color: #475569;">Informations Pratiques</h3>
               <p style="margin: 5px 0; font-size: 14px;">📅 <strong>Dates :</strong> 15 - 20 Avril 2026</p>
               <p style="margin: 5px 0; font-size: 14px;">📍 <strong>Lieu :</strong> Lomé, Togo</p>
             </div>
-
             <p>Toute l'équipe du FIAA se réjouit de vous accueillir prochainement.</p>
           </div>
           <div style="background-color: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b;">
@@ -42,12 +51,15 @@ export default async function handler(req: any, res: any) {
           </div>
         </div>
       `;
-      attachments = [
-        {
-          filename: `badge-${inscription.prenom}-${inscription.nom}.pdf`,
-          content: pdfBase64,
-        },
-      ];
+      
+      if (pdfBase64) {
+          attachments = [
+            {
+              filename: `badge-${inscription.prenom}-${inscription.nom}.pdf`,
+              content: pdfBase64,
+            },
+          ];
+      }
     } else if (type === 'REJECTION') {
       subject = `FIAA 2026 - Informations sur votre inscription`;
       htmlContent = `
@@ -69,6 +81,8 @@ export default async function handler(req: any, res: any) {
       `;
     }
 
+    console.log('Sending email to:', inscription.email, 'Type:', type);
+
     const { data, error } = await resend.emails.send({
       from: 'FIAA 2026 <onboarding@resend.dev>',
       to: [inscription.email],
@@ -78,13 +92,18 @@ export default async function handler(req: any, res: any) {
     });
 
     if (error) {
-      console.error('Resend Error:', error);
-      return res.status(400).json({ error });
+      console.error('Resend API Error:', error);
+      return res.status(400).json({ error: error.message || error });
     }
 
+    console.log('Email sent successfully:', data?.id);
     return res.status(200).json({ message: 'Email sent successfully', data });
+
   } catch (error: any) {
-    console.error('Function Error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Unhandled Function Error:', error);
+    return res.status(500).json({ 
+        error: error.message || 'Internal Server Error',
+        details: typeof error === 'object' ? JSON.stringify(error) : String(error)
+    });
   }
 }
