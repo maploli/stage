@@ -18,7 +18,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-primary-foreground/70 text-sm leading-relaxed">
-              Festival de l'Innovation Agricole & Agritech - Connecter la Terre et la Tech pour une Agriculture Africaine d'Avenir.
+              Festival International de l'Agriculture et de l'Agroalimentaire - Connecter la Terre et la Tech pour une Agriculture Africaine d'Avenir.
             </p>
             <div className="flex gap-3">
               <a href="#" className="w-9 h-9 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
@@ -104,7 +104,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-primary-foreground/50 text-sm">
-            © 2026 FIAA - Festival de l'Innovation Agricole & Agritech. Tous droits réservés.
+            © 2026 FIAA - Festival International de l'Agriculture et de l'Agroalimentaire. Tous droits réservés.
           </p>
           <div className="flex gap-6">
             <Link to="/mentions-legales" className="text-primary-foreground/50 text-sm hover:text-primary-foreground transition-colors">

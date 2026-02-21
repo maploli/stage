@@ -49,8 +49,8 @@ export const generateBadgeBlob = async (inscription: any): Promise<Blob> => {
             doc.fillColor('#059669').fontSize(14).font('Helvetica').text('2026', 100, 19);
             
             // Event Details (Right aligned)
-            doc.fillColor('#6b7280').fontSize(9).font('Helvetica').text('FORUM INTERNATIONAL', 0, 14, { align: 'right', width: doc.page.width - 25 });
-            doc.text('DE L\'AGRO-ALIMENTAIRE', 0, 24, { align: 'right', width: doc.page.width - 25 });
+            doc.fillColor('#6b7280').fontSize(9).font('Helvetica').text('FESTIVAL INTERNATIONAL', 0, 14, { align: 'right', width: doc.page.width - 25 });
+            doc.text('DE L\'AGRICULTURE ET DE L\'AGROALIMENTAIRE', 0, 24, { align: 'right', width: doc.page.width - 25 });
 
             // 5. User Information
             const profileLabel = (inscription.profile || 'VISITEUR').toUpperCase();
