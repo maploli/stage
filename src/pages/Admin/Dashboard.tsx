@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabaseClient";
 import { generateBadgePDF, generateBadgeBlob } from "@/utils/badgeGenerator";
-import { sendApprovalEmail } from "@/lib/notificationService";
+import { sendApprovalEmail, sendRejectionEmail } from "@/lib/notificationService";
 
 interface InscriptionData {
   id: string; // UUID
@@ -120,12 +120,43 @@ const Dashboard = () => {
                         toast.error("Erreur d'envoi du mail (vérifiez votre clé Resend)", { id: emailId });
                     }
                 }
+            } else if (status === 'REJECTED') {
+                const inscription = inscriptions.find(i => i.id === id);
+                if (inscription) {
+                    try {
+                        await sendRejectionEmail(inscription);
+                    } catch (emailError) {
+                        console.error("Rejection email fail:", emailError);
+                    }
+                }
             }
 
             fetchData(); // Refresh list
         } catch (error) {
             console.error("Update error:", error);
             toast.error("Erreur mise à jour statut");
+        }
+    };
+
+    const handleResendEmail = async (inscription: InscriptionData) => {
+        const emailId = toast.loading(`Renvoi du mail à ${inscription.email}...`);
+        try {
+            const blob = await generateBadgeBlob(inscription);
+            await sendApprovalEmail(inscription, blob);
+            
+            await supabase
+                .from('inscriptions')
+                .update({ 
+                    email_sent: true, 
+                    email_sent_at: new Date().toISOString() 
+                })
+                .eq('id', inscription.id);
+
+            toast.success("Badge renvoyé avec succès !", { id: emailId });
+            fetchData();
+        } catch (error) {
+            console.error("Resend error:", error);
+            toast.error("Erreur lors du renvoi du mail.", { id: emailId });
         }
     };
 
@@ -173,19 +204,32 @@ const Dashboard = () => {
                                                 <TableCell>{item.profile}</TableCell>
                                                 <TableCell>{item.organisation}</TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className={`px-2 py-1 rounded text-xs font-semibold w-fit
-                                                            ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
-                                                              item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
-                                                              'bg-yellow-100 text-yellow-800'}`}>
-                                                            {item.status || 'PENDING'}
-                                                        </span>
-                                                        {item.email_sent && (
-                                                            <span className="text-[10px] text-green-600 flex items-center">
-                                                                ✅ Mail envoyé
-                                                            </span>
-                                                        )}
+                                            <div className="flex flex-col gap-1">
+                                                <span className={`px-2 py-1 rounded text-xs font-semibold w-fit
+                                                    ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
+                                                      item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                                                      'bg-yellow-100 text-yellow-800'}`}>
+                                                    {item.status || 'PENDING'}
+                                                </span>
+                                                {item.email_sent ? (
+                                                    <div className="flex items-center gap-1 group">
+                                                        <span className="text-[10px] text-green-600">✅ Mail envoyé</span>
+                                                        <button 
+                                                            onClick={() => handleResendEmail(item)}
+                                                            className="text-[10px] text-blue-600 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            (Renvoyer)
+                                                        </button>
                                                     </div>
+                                                ) : item.status === 'APPROVED' && (
+                                                    <button 
+                                                        onClick={() => handleResendEmail(item)}
+                                                        className="text-[10px] text-blue-600 hover:underline text-left"
+                                                    >
+                                                        📧 Envoyer le badge
+                                                    </button>
+                                                )}
+                                            </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
