@@ -23,9 +23,12 @@ const sendEmailNotification = async (inscription: any, type: 'APPROVAL' | 'REJEC
             pdfBase64 = await base64Promise;
         }
 
-        // Call the Netlify Function
-        const response = await fetch('/.netlify/functions/send-email', {
+        // Call the Vercel Serverless Function
+        const response = await fetch('/api/send-email', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
                 inscription,
                 type,
