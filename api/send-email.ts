@@ -21,6 +21,7 @@ export default async function handler(req: any, res: any) {
         return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
 
+    // Instantiating inside the handler to ensure fresh environment access
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     let subject = "";
