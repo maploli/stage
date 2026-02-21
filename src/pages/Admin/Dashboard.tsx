@@ -224,11 +224,22 @@ const Dashboard = () => {
                                                                     </DialogDescription>
                                                                 </DialogHeader>
                                                                 <div className="grid gap-4 py-4">
-                                                                    <div className="grid grid-cols-4 items-center gap-4">
-                                                                        <span className="font-bold col-span-4">Données Spécifiques :</span>
-                                                                        <pre className="col-span-4 bg-muted p-2 rounded-md text-sm overflow-auto max-h-[200px]">
-                                                                            {JSON.stringify(item.specific_data, null, 2)}
-                                                                        </pre>
+                                                                    <div className="grid grid-cols-4 items-start gap-4 p-3 bg-muted/50 rounded-lg">
+                                                                        <span className="font-bold col-span-4">Données Spécifiques {item.profile} :</span>
+                                                                        {item.specific_data && Object.keys(item.specific_data).length > 0 ? (
+                                                                            <div className="col-span-4 grid grid-cols-2 gap-y-2 text-sm italic">
+                                                                                {Object.entries(item.specific_data).map(([key, value]) => (
+                                                                                    value ? (
+                                                                                        <>
+                                                                                            <span className="font-semibold capitalize">{key}:</span>
+                                                                                            <span className="truncate" title={String(value)}>{String(value)}</span>
+                                                                                        </>
+                                                                                    ) : null
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="col-span-4 text-sm text-muted-foreground italic text-center">Aucune donnée spécifique</span>
+                                                                        )}
                                                                     </div>
                                                                     <div className="grid grid-cols-2 gap-2 text-sm">
                                                                         <span className="font-semibold">Téléphone:</span> <span>{item.telephone}</span>

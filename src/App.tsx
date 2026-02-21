@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import MySpace from "./pages/MySpace";
+import UserLogin from "./pages/UserLogin";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/sponsors" element={<Sponsors />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/mon-espace" element={<MySpace />} />
+          <Route path="/login" element={<UserLogin />} />
           <Route path="/admin" element={<Login />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

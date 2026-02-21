@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/programme", label: "Programme" },
   { href: "/inscription", label: "S'inscrire" },
   { href: "/sponsors", label: "Partenaires" },
+  { href: "/mon-espace", label: "Mon Espace" },
   { href: "/contact", label: "Contact" },
 ];
 

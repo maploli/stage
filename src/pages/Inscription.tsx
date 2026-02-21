@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Sprout, Rocket, Building2, Users, Newspaper, 
-  ArrowRight, ArrowLeft, CheckCircle2, User, Mail, Phone, MapPin
+  ArrowRight, ArrowLeft, CheckCircle2, User, Mail, Phone, MapPin, Lock
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -94,6 +94,7 @@ const Inscription = () => {
     production: "",
     stage: "",
     pitchDeck: "",
+    password: "",
   });
 
   const handleProfileSelect = (profileId: ProfileType) => {
@@ -120,6 +121,7 @@ const Inscription = () => {
           fonction: formData.fonction,
           besoins: formData.besoins,
           profile: selectedProfile,
+          password: formData.password,
           specific_data: {
             superficie: formData.superficie,
             production: formData.production,
@@ -315,6 +317,24 @@ const Inscription = () => {
                           />
                         </div>
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Définissez un mot de passe pour votre espace *</Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                id="password"
+                                name="password"
+                                type="password"
+                                placeholder="Votre mot de passe"
+                                className="pl-10"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Ce mot de passe vous permettra d'accéder à votre espace pour suivre votre dossier et télécharger votre badge.</p>
                     </div>
 
                     <div className="space-y-2">
