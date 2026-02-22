@@ -1,23 +1,21 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Leaf, Globe } from "lucide-react";
+import { Menu, X, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/context/LanguageContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { language, setLanguage, t } = useLanguage();
 
   const navLinks = [
-    { href: "/", label: t("nav.home") },
-    { href: "/programme", label: t("nav.programme") },
-    { href: "/inscription", label: t("nav.register") },
-    { href: "/sponsors", label: t("nav.sponsors") },
-    { href: "/mon-espace", label: t("nav.login") },
-    { href: "/contact", label: t("nav.contact") },
+    { href: "/", label: "Accueil" },
+    { href: "/programme", label: "Programme" },
+    { href: "/inscription", label: "S'inscrire" },
+    { href: "/sponsors", label: "Sponsors" },
+    { href: "/mon-espace", label: "Espace Participant" },
+    { href: "/contact", label: "Contact" },
   ];
 
   return (
@@ -55,34 +53,14 @@ export function Header() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          {/* Language Switcher */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
-            className="flex items-center gap-2"
-          >
-            <Globe className="w-4 h-4" />
-            {language?.toUpperCase()}
-          </Button>
-
           {/* CTA Button */}
           <Button variant="hero" size="sm" asChild>
-            <Link to="/inscription">{t("nav.register")}</Link>
+            <Link to="/inscription">S'inscrire</Link>
           </Button>
         </div>
 
         {/* Mobile Actions */}
         <div className="flex items-center gap-2 md:hidden">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
-          >
-            <Globe className="w-4 h-4" />
-            {language?.toUpperCase()}
-          </Button>
-
           <button
             className="p-2 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setIsOpen(!isOpen)}
@@ -120,7 +98,7 @@ export function Header() {
               ))}
               <Button variant="hero" className="mt-2" asChild>
                 <Link to="/inscription" onClick={() => setIsOpen(false)}>
-                  {t("nav.register")}
+                  S'inscrire
                 </Link>
               </Button>
             </div>

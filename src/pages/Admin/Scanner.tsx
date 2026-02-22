@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Camera, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface InscriptionData {
   id: string;
@@ -24,7 +23,6 @@ interface InscriptionData {
 }
 
 const Scanner = () => {
-    const { t } = useLanguage();
     const [scanResult, setScanResult] = useState<InscriptionData | null>(null);
     const [loading, setLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(true);

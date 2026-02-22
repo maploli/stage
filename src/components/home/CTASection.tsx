@@ -3,11 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { useLanguage } from "@/context/LanguageContext";
-
 export function CTASection() {
-  const { t } = useLanguage();
-
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
@@ -27,26 +23,27 @@ export function CTASection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 text-primary-foreground text-sm mb-8">
             <Sparkles className="w-4 h-4 text-accent" />
-            {t("cta.badge")}
+            Places limitées à 600 participants
           </div>
 
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-6">
-            {t("cta.title")}
+            Rejoignez le mouvement de l'agriculture africaine de demain
           </h2>
 
           <p className="text-lg text-primary-foreground/80 mb-10 max-w-2xl mx-auto">
-            {t("cta.subtitle")}
+            Ne manquez pas cette opportunité unique de rencontrer les acteurs clés, 
+            découvrir les dernières innovations et façonner l'avenir de l'agriculture africaine.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
             <Button variant="hero" size="xl" asChild>
               <Link to="/inscription">
-                {t("cta.button")}
+                S'inscrire maintenant
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
             <Button variant="hero-outline" size="xl" asChild>
-              <Link to="/sponsors">{t("cta.partner")}</Link>
+              <Link to="/sponsors">Devenir partenaire</Link>
             </Button>
           </div>
         </motion.div>

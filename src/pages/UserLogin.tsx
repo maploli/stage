@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { Lock, Mail, ArrowRight, Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
-import { useLanguage } from "@/context/LanguageContext";
 import {
     Dialog,
     DialogContent,
@@ -21,7 +20,6 @@ import {
 
 const UserLogin = () => {
     const navigate = useNavigate();
-    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [resetLoading, setResetLoading] = useState(false);
     const [resetEmail, setResetEmail] = useState("");
@@ -113,15 +111,15 @@ const UserLogin = () => {
                                     <Lock className="w-8 h-8 text-primary" />
                                 </div>
                             </div>
-                            <CardTitle className="text-2xl font-bold text-center">{t("auth.login.title")}</CardTitle>
+                            <CardTitle className="text-2xl font-bold text-center">Connexion</CardTitle>
                             <CardDescription className="text-center">
-                                {t("auth.login.desc")}
+                                Accédez à votre espace participant pour gérer votre badge et vos informations.
                             </CardDescription>
                         </CardHeader>
                         <form onSubmit={handleLogin}>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">{t("auth.login.email")}</Label>
+                                    <Label htmlFor="email">Email</Label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         <Input 
@@ -138,11 +136,11 @@ const UserLogin = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="password">{t("auth.login.password")}</Label>
+                                        <Label htmlFor="password">Mot de passe</Label>
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <button type="button" className="text-xs text-primary hover:underline">
-                                                    {t("auth.login.forgot")}
+                                                    Mot de passe oublié ?
                                                 </button>
                                             </DialogTrigger>
                                             <DialogContent>
@@ -191,21 +189,21 @@ const UserLogin = () => {
                                         <Loader2 className="animate-spin mr-2 h-4 w-4" />
                                     ) : (
                                         <>
-                                            {t("auth.login.submit")}
+                                            Se connecter
                                             <ArrowRight className="ml-2 w-4 h-4" />
                                         </>
                                     )}
                                 </Button>
                                 <div className="text-sm text-center text-muted-foreground">
-                                    {t("auth.login.noAccount")}{" "}
+                                    Pas encore de compte ?{" "}
                                     <Link to="/inscription" className="text-primary font-semibold hover:underline">
-                                        {t("auth.login.register")}
+                                        S'inscrire
                                     </Link>
                                 </div>
                                 <Button variant="ghost" className="w-full" asChild>
                                     <Link to="/">
                                         <ArrowLeft className="mr-2 w-4 h-4" />
-                                        {t("common.back")}
+                                        Retour à l'accueil
                                     </Link>
                                 </Button>
                             </CardFooter>
