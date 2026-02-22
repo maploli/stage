@@ -85,7 +85,7 @@ export default async function handler(req: any, res: any) {
     console.log('Sending email to:', inscription.email, 'Type:', type);
 
     const { data, error } = await resend.emails.send({
-      from: 'FIAA 2026 <onboarding@resend.dev>',
+      from: 'FIAA 2026 <contact@fiaa2026.tech>',
       to: [inscription.email],
       subject: subject,
       html: htmlContent,
