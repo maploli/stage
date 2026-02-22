@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { LogOut, Eye } from "lucide-react";
+import { LogOut, Eye, BarChart3, Users, Mail, CheckCircle2, XCircle, Camera, Loader2, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,21 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { generateBadgePDF, generateBadgeBlob } from "@/utils/badgeGenerator";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/notificationService";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  LineChart,
+  Line,
+  Legend
+} from 'recharts';
 
 interface InscriptionData {
   id: string; // UUID
@@ -47,10 +63,14 @@ interface MessageData {
   created_at: string;
 }
 
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1'];
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [inscriptions, setInscriptions] = useState<InscriptionData[]>([]);
     const [messages, setMessages] = useState<MessageData[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         checkUser();
@@ -71,8 +91,8 @@ const Dashboard = () => {
                 supabase.from('contacts').select('*').order('created_at', { ascending: false })
             ]);
 
-            if (inscriptionsRes.data) setInscriptions(inscriptionsRes.data as any);
-            if (messagesRes.data) setMessages(messagesRes.data as any);
+            if (inscriptionsRes.data) setInscriptions(inscriptionsRes.data as InscriptionData[]);
+            if (messagesRes.data) setMessages(messagesRes.data as MessageData[]);
         } catch (error) {
             toast.error("Erreur de chargement des données");
         }
@@ -85,7 +105,6 @@ const Dashboard = () => {
 
     const updateStatus = async (id: string, status: string) => {
         try {
-            // 1. Update status in database
             const { error: updateError } = await supabase
                 .from('inscriptions')
                 .update({ status })
@@ -93,48 +112,56 @@ const Dashboard = () => {
 
             if (updateError) throw updateError;
             
-            toast.success(`Statut mis à jour : ${status}`);
-
-            // 2. If status is APPROVED, send the email
             if (status === 'APPROVED') {
                 const inscription = inscriptions.find(i => i.id === id);
                 if (inscription && !inscription.email_sent) {
-                    const emailId = toast.loading("Génération du badge et envoi du mail...");
-                    
                     try {
                         const blob = await generateBadgeBlob(inscription);
                         await sendApprovalEmail(inscription, blob);
-                        
-                        // Update email status in DB
-                        await supabase
-                            .from('inscriptions')
-                            .update({ 
-                                email_sent: true, 
-                                email_sent_at: new Date().toISOString() 
-                            })
-                            .eq('id', id);
-
-                        toast.success("Email envoyé avec succès !", { id: emailId });
-                    } catch (emailError) {
-                        console.error("Email sending failure:", emailError);
-                        toast.error("Erreur d'envoi du mail (vérifiez votre clé Resend)", { id: emailId });
+                        await supabase.from('inscriptions').update({ email_sent: true, email_sent_at: new Date().toISOString() }).eq('id', id);
+                    } catch (e) { 
+                        console.error("Email sending failure:", e);
+                        toast.error("Erreur d'envoi du mail de validation");
                     }
                 }
             } else if (status === 'REJECTED') {
                 const inscription = inscriptions.find(i => i.id === id);
                 if (inscription) {
-                    try {
-                        await sendRejectionEmail(inscription);
-                    } catch (emailError) {
-                        console.error("Rejection email fail:", emailError);
+                    try { 
+                        await sendRejectionEmail(inscription); 
+                    } catch(e) {
+                        console.error("Rejection email failure:", e);
                     }
                 }
             }
 
-            fetchData(); // Refresh list
+            toast.success(`Statut mis à jour : ${status}`);
+            fetchData();
         } catch (error) {
-            console.error("Update error:", error);
             toast.error("Erreur mise à jour statut");
+        }
+    };
+
+    const handleBulkAction = async (status: string) => {
+        if (selectedIds.length === 0) return;
+        setIsProcessing(true);
+        const toastId = toast.loading(`Traitement de ${selectedIds.length} inscriptions...`);
+
+        try {
+            const { error } = await supabase
+                .from('inscriptions')
+                .update({ status })
+                .in('id', selectedIds);
+
+            if (error) throw error;
+
+            toast.success(`${selectedIds.length} inscriptions ${status === 'APPROVED' ? 'approuvées' : 'refusées'}.`, { id: toastId });
+            setSelectedIds([]);
+            fetchData();
+        } catch (error) {
+            toast.error("Erreur lors de l'action groupée", { id: toastId });
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -143,117 +170,192 @@ const Dashboard = () => {
         try {
             const blob = await generateBadgeBlob(inscription);
             await sendApprovalEmail(inscription, blob);
-            
-            await supabase
-                .from('inscriptions')
-                .update({ 
-                    email_sent: true, 
-                    email_sent_at: new Date().toISOString() 
-                })
-                .eq('id', inscription.id);
-
+            await supabase.from('inscriptions').update({ email_sent: true, email_sent_at: new Date().toISOString() }).eq('id', inscription.id);
             toast.success("Badge renvoyé avec succès !", { id: emailId });
             fetchData();
         } catch (error) {
-            console.error("Resend error:", error);
             toast.error("Erreur lors du renvoi du mail.", { id: emailId });
         }
     };
 
+    // Stats calculations
+    const stats = useMemo(() => {
+        const profileCount: Record<string, number> = {};
+        const statusCount: Record<string, number> = {};
+        const regionCount: Record<string, number> = {};
+        
+        inscriptions.forEach(ins => {
+            profileCount[ins.profile] = (profileCount[ins.profile] || 0) + 1;
+            statusCount[ins.status] = (statusCount[ins.status] || 0) + 1;
+            if (ins.region) regionCount[ins.region] = (regionCount[ins.region] || 0) + 1;
+        });
+
+        const profileData = Object.entries(profileCount).map(([name, value]) => ({ name, value }));
+        const statusData = Object.entries(statusCount).map(([name, value]) => ({ name, value }));
+        const regionData = Object.entries(regionCount).map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value).slice(0, 5);
+
+        return { profileData, statusData, regionData };
+    }, [inscriptions]);
+
     return (
         <Layout>
             <div className="container mx-auto py-8 px-4">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">Tableau de bord Admin</h1>
-                    <Button variant="outline" onClick={handleLogout}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
-                    </Button>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold">Administration FIAA 2026</h1>
+                        <p className="text-muted-foreground">Gestion des inscriptions et contrôle d'accès.</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <Link to="/admin/scan">
+                                <Camera className="w-4 h-4 mr-2" />
+                                Scanner Badge
+                            </Link>
+                        </Button>
+                        <Button variant="destructive" onClick={handleLogout}>
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Déconnexion
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Users className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Inscriptions</p>
+                                    <p className="text-2xl font-bold">{inscriptions.length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-green-100 rounded-lg">
+                                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Approuvées</p>
+                                    <p className="text-2xl font-bold text-green-600">
+                                        {inscriptions.filter(i => i.status === 'APPROVED').length}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-yellow-100 rounded-lg">
+                                    <Loader2 className="w-6 h-6 text-yellow-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">En attente</p>
+                                    <p className="text-2xl font-bold text-yellow-600">
+                                        {inscriptions.filter(i => i.status === 'PENDING' || !i.status).length}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                    <Mail className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Messages reçus</p>
+                                    <p className="text-2xl font-bold text-blue-600">{messages.length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <Tabs defaultValue="inscriptions">
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="inscriptions">Inscriptions ({inscriptions.length})</TabsTrigger>
-                        <TabsTrigger value="messages">Messages ({messages.length})</TabsTrigger>
+                    <TabsList className="mb-6 h-12">
+                        <TabsTrigger value="inscriptions" className="px-6">Inscriptions</TabsTrigger>
+                        <TabsTrigger value="stats" className="px-6">Statistiques</TabsTrigger>
+                        <TabsTrigger value="messages" className="px-6">Messages</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="inscriptions">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                {selectedIds.length > 0 && (
+                                    <div className="flex items-center gap-2 animate-in slide-in-from-left-4">
+                                        <span className="text-sm font-medium mr-2">{selectedIds.length} sélectionné(s) :</span>
+                                        <Button size="sm" onClick={() => handleBulkAction('APPROVED')} disabled={isProcessing}>
+                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Approuver
+                                        </Button>
+                                        <Button size="sm" variant="destructive" onClick={() => handleBulkAction('REJECTED')} disabled={isProcessing}>
+                                            <XCircle className="w-4 h-4 mr-2" /> Refuser
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Annuler</Button>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-sm text-muted-foreground italic">Dernières inscriptions en haut</p>
+                        </div>
+
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Inscriptions récentes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-10">
+                                                <Checkbox 
+                                                    checked={selectedIds.length === inscriptions.length && inscriptions.length > 0}
+                                                    onCheckedChange={(checked) => {
+                                                        setSelectedIds(checked ? inscriptions.map(i => i.id) : []);
+                                                    }}
+                                                />
+                                            </TableHead>
                                             <TableHead>Date</TableHead>
                                             <TableHead>Nom</TableHead>
-                                            <TableHead>Email</TableHead>
                                             <TableHead>Profil</TableHead>
                                             <TableHead>Organisation</TableHead>
                                             <TableHead>Statut</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {inscriptions.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
-                                                <TableCell>{item.prenom} {item.nom}</TableCell>
-                                                <TableCell>{item.email}</TableCell>
-                                                <TableCell>{item.profile}</TableCell>
-                                                <TableCell>{item.organisation}</TableCell>
+                                            <TableRow key={item.id} className={selectedIds.includes(item.id) ? "bg-primary/5" : ""}>
                                                 <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className={`px-2 py-1 rounded text-xs font-semibold w-fit
-                                                    ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
-                                                      item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
-                                                      'bg-yellow-100 text-yellow-800'}`}>
-                                                    {item.status || 'PENDING'}
-                                                </span>
-                                                {item.email_sent ? (
-                                                    <div className="flex items-center gap-1 group">
-                                                        <span className="text-[10px] text-green-600">✅ Mail envoyé</span>
-                                                        <button 
-                                                            onClick={() => handleResendEmail(item)}
-                                                            className="text-[10px] text-blue-600 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                            (Renvoyer)
-                                                        </button>
-                                                    </div>
-                                                ) : item.status === 'APPROVED' && (
-                                                    <button 
-                                                        onClick={() => handleResendEmail(item)}
-                                                        className="text-[10px] text-blue-600 hover:underline text-left"
-                                                    >
-                                                        📧 Envoyer le badge
-                                                    </button>
-                                                )}
-                                            </div>
+                                                    <Checkbox 
+                                                        checked={selectedIds.includes(item.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            setSelectedIds(prev => checked ? [...prev, item.id] : prev.filter(id => id !== item.id));
+                                                        }}
+                                                    />
                                                 </TableCell>
+                                                <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
+                                                <TableCell className="font-medium">{item.prenom} {item.nom}</TableCell>
                                                 <TableCell>
-                                                    <div className="flex gap-2">
-                                                        {item.status !== 'APPROVED' && (
-                                                            <Button 
-                                                                variant="default" size="sm" className="bg-green-600 hover:bg-green-700 h-8"
-                                                                onClick={() => updateStatus(item.id, 'APPROVED')}
-                                                            >
-                                                                Valider
-                                                            </Button>
-                                                        )}
-                                                        {item.status !== 'REJECTED' && (
-                                                            <Button 
-                                                                variant="destructive" size="sm" className="h-8"
-                                                                onClick={() => updateStatus(item.id, 'REJECTED')}
-                                                            >
-                                                                Refuser
-                                                            </Button>
-                                                        )}
-                                                        {item.status === 'APPROVED' && (
-                                                            <Button variant="outline" size="sm" className="h-8" onClick={() => generateBadgePDF(item)}>
-                                                                Badge
-                                                            </Button>
-                                                        )}
+                                                    <span className="capitalize text-xs px-2 py-0.5 rounded-full bg-muted">{item.profile}</span>
+                                                </TableCell>
+                                                <TableCell className="max-w-[150px] truncate">{item.organisation}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`px-2 py-1 rounded text-[10px] font-bold w-fit
+                                                            ${item.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
+                                                              item.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                                                              'bg-yellow-100 text-yellow-800'}`}>
+                                                            {item.status || 'PENDING'}
+                                                        </span>
+                                                        {item.email_sent && <span className="text-[9px] text-green-600 font-medium">✓ Email envoyé</span>}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
                                                         <Dialog>
                                                             <DialogTrigger asChild>
                                                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -262,38 +364,30 @@ const Dashboard = () => {
                                                             </DialogTrigger>
                                                             <DialogContent>
                                                                 <DialogHeader>
-                                                                    <DialogTitle>Détails de {item.prenom} {item.nom}</DialogTitle>
-                                                                    <DialogDescription>
-                                                                        Informations supplémentaires du profil {item.profile}.
-                                                                    </DialogDescription>
+                                                                    <DialogTitle>{item.prenom} {item.nom}</DialogTitle>
+                                                                    <DialogDescription>Détails de l'inscription #{item.badge_id?.split('-')[0]}</DialogDescription>
                                                                 </DialogHeader>
-                                                                <div className="grid gap-4 py-4">
-                                                                    <div className="grid grid-cols-4 items-start gap-4 p-3 bg-muted/50 rounded-lg">
-                                                                        <span className="font-bold col-span-4">Données Spécifiques {item.profile} :</span>
-                                                                        {item.specific_data && Object.keys(item.specific_data).length > 0 ? (
-                                                                            <div className="col-span-4 grid grid-cols-2 gap-y-2 text-sm italic">
-                                                                                {Object.entries(item.specific_data).map(([key, value]) => (
-                                                                                    value ? (
-                                                                                        <>
-                                                                                            <span className="font-semibold capitalize">{key}:</span>
-                                                                                            <span className="truncate" title={String(value)}>{String(value)}</span>
-                                                                                        </>
-                                                                                    ) : null
-                                                                                ))}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="col-span-4 text-sm text-muted-foreground italic text-center">Aucune donnée spécifique</span>
-                                                                        )}
+                                                                <div className="space-y-4 py-4">
+                                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                        <div><p className="text-muted-foreground">Email</p><p className="font-medium">{item.email}</p></div>
+                                                                        <div><p className="text-muted-foreground">Téléphone</p><p className="font-medium">{item.telephone}</p></div>
+                                                                        <div><p className="text-muted-foreground">Profil</p><p className="font-medium capitalize">{item.profile}</p></div>
+                                                                        <div><p className="text-muted-foreground">Région</p><p className="font-medium">{item.region || '-'}</p></div>
                                                                     </div>
-                                                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                                                        <span className="font-semibold">Téléphone:</span> <span>{item.telephone}</span>
-                                                                        <span className="font-semibold">Région:</span> <span>{item.region}</span>
-                                                                        <span className="font-semibold">Fonction:</span> <span>{item.fonction || '-'}</span>
-                                                                        <span className="font-semibold">Besoins:</span> <span className="col-span-2">{item.besoins}</span>
+                                                                    <div className="border-t pt-4">
+                                                                        <p className="text-sm font-bold mb-2">Données spécifiques :</p>
+                                                                        <div className="bg-muted p-3 rounded-md text-xs grid grid-cols-2 gap-2">
+                                                                            {item.specific_data && Object.entries(item.specific_data).map(([k, v]) => (
+                                                                                <div key={k}><span className="font-semibold capitalize">{k}:</span> {String(v)}</div>
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </DialogContent>
                                                         </Dialog>
+                                                        
+                                                        <Button variant="outline" size="sm" className="h-8" onClick={() => updateStatus(item.id, 'APPROVED')}>Approuver</Button>
+                                                        <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive" onClick={() => updateStatus(item.id, 'REJECTED')}>Refuser</Button>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -304,18 +398,62 @@ const Dashboard = () => {
                         </Card>
                     </TabsContent>
 
+                    <TabsContent value="stats">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card className="p-6">
+                                <CardTitle className="text-lg mb-4 flex items-center gap-2">
+                                    <BarChart3 className="w-5 h-5" /> Répartition par Profil
+                                </CardTitle>
+                                <div className="h-[300px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={stats.profileData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="name" />
+                                            <YAxis />
+                                            <Tooltip />
+                                            <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+
+                            <Card className="p-6">
+                                <CardTitle className="text-lg mb-4 flex items-center gap-2">
+                                    <Users className="w-5 h-5" /> Top 5 Régions
+                                </CardTitle>
+                                <div className="h-[300px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={stats.regionData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {stats.regionData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip />
+                                            <Legend />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
                     <TabsContent value="messages">
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Messages reçus</CardTitle>
-                            </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Date</TableHead>
-                                            <TableHead>Nom</TableHead>
-                                            <TableHead>Email</TableHead>
+                                            <TableHead>Expéditeur</TableHead>
                                             <TableHead>Sujet</TableHead>
                                             <TableHead>Message</TableHead>
                                         </TableRow>
@@ -324,10 +462,14 @@ const Dashboard = () => {
                                         {messages.map((item) => (
                                             <TableRow key={item.id}>
                                                 <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
-                                                <TableCell>{item.nom}</TableCell>
-                                                <TableCell>{item.email}</TableCell>
-                                                <TableCell>{item.sujet}</TableCell>
-                                                <TableCell className="max-w-xs truncate" title={item.message}>{item.message}</TableCell>
+                                                <TableCell>
+                                                    <div className="font-medium">{item.nom}</div>
+                                                    <div className="text-xs text-muted-foreground">{item.email}</div>
+                                                </TableCell>
+                                                <TableCell className="font-medium">{item.sujet}</TableCell>
+                                                <TableCell className="max-w-md">
+                                                    <p className="truncate" title={item.message}>{item.message}</p>
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

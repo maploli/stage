@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Leaf } from "lucide-react";
+import { Menu, X, Leaf, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const navLinks = [
-  { href: "/", label: "Accueil" },
-  { href: "/programme", label: "Programme" },
-  { href: "/inscription", label: "S'inscrire" },
-  { href: "/sponsors", label: "Partenaires" },
-  { href: "/mon-espace", label: "Mon Espace" },
-  { href: "/contact", label: "Contact" },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { language, setLanguage, t } = useLanguage();
+
+  const navLinks = [
+    { href: "/", label: t("nav.home") },
+    { href: "/programme", label: t("nav.programme") },
+    { href: "/inscription", label: t("nav.register") },
+    { href: "/sponsors", label: t("nav.sponsors") },
+    { href: "/mon-espace", label: t("nav.login") },
+    { href: "/contact", label: t("nav.contact") },
+  ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -52,21 +54,43 @@ export function Header() {
           ))}
         </div>
 
-        {/* CTA Button */}
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-4">
+          {/* Language Switcher */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
+            className="flex items-center gap-2"
+          >
+            <Globe className="w-4 h-4" />
+            {language?.toUpperCase()}
+          </Button>
+
+          {/* CTA Button */}
           <Button variant="hero" size="sm" asChild>
-            <Link to="/inscription">Inscription</Link>
+            <Link to="/inscription">{t("nav.register")}</Link>
           </Button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        {/* Mobile Actions */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
+          >
+            <Globe className="w-4 h-4" />
+            {language?.toUpperCase()}
+          </Button>
+
+          <button
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Menu */}
@@ -96,7 +120,7 @@ export function Header() {
               ))}
               <Button variant="hero" className="mt-2" asChild>
                 <Link to="/inscription" onClick={() => setIsOpen(false)}>
-                  S'inscrire maintenant
+                  {t("nav.register")}
                 </Link>
               </Button>
             </div>

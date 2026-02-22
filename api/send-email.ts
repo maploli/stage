@@ -80,6 +80,30 @@ export default async function handler(req: any, res: any) {
           </div>
         </div>
       `;
+    } else if (type === 'PASSWORD_RECOVERY') {
+      subject = `FIAA 2026 - Vos identifiants de connexion`;
+      htmlContent = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <div style="background-color: #059669; padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">FIAA 2026</h1>
+          </div>
+          <div style="padding: 40px;">
+            <h2 style="color: #1e293b; margin-top: 0;">Bonjour ${inscription.prenom},</h2>
+            <p>Vous avez demandé la récupération de vos identifiants pour accéder à votre espace participant FIAA 2026.</p>
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #e2e8f0;">
+              <p style="margin: 5px 0;"><strong>Email :</strong> ${inscription.email}</p>
+              <p style="margin: 5px 0;"><strong>Mot de passe :</strong> ${inscription.password}</p>
+            </div>
+            <p>Vous pouvez maintenant vous connecter en cliquant sur le bouton ci-dessous :</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://fiaa-nine.vercel.app/login" style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold;">Se connecter</a>
+            </div>
+          </div>
+          <div style="background-color: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b;">
+            <p style="margin: 0;">© 2026 FIAA - Forum International de l'Agriculture et de l'Agro-Alimentaire</p>
+          </div>
+        </div>
+      `;
     }
 
     console.log('Sending email to:', inscription.email, 'Type:', type);
