@@ -1,38 +1,42 @@
 import { motion } from "framer-motion";
 import { Lightbulb, GraduationCap, Building, Coffee } from "lucide-react";
 
-const zones = [
-  {
-    icon: Lightbulb,
-    name: "Zone Innovation",
-    percentage: "40%",
-    features: ["Stands startups (30 unités)", "Lab d'expérimentation tech", "Espace pitch et démonstrations", "Zone prototypage rapide"],
-    color: "primary",
-  },
-  {
-    icon: GraduationCap,
-    name: "Zone Formation",
-    percentage: "25%",
-    features: ["Ateliers pratiques (5 salles)", "Demo centers thématiques", "Espace coworking collaboratif", "Lab digital mobile"],
-    color: "accent",
-  },
-  {
-    icon: Building,
-    name: "Zone Institutionnelle",
-    percentage: "20%",
-    features: ["Pavillon partenaires stratégiques", "Espace institutions publiques", "Zone investisseurs", "Point presse et médias"],
-    color: "purple",
-  },
-  {
-    icon: Coffee,
-    name: "Zone Services",
-    percentage: "15%",
-    features: ["Restauration et détente", "Networking lounge", "Infirmerie et sécurité", "Informations et accueil"],
-    color: "earth",
-  },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function ZonesSection() {
+  const { t } = useLanguage();
+
+  const zones = [
+    {
+      icon: Lightbulb,
+      name: t("zones.innovation.name"),
+      percentage: "40%",
+      features: [t("zones.innovation.feat1"), t("zones.innovation.feat2"), t("zones.innovation.feat3"), t("zones.innovation.feat4")],
+      color: "primary",
+    },
+    {
+      icon: GraduationCap,
+      name: t("zones.formation.name"),
+      percentage: "25%",
+      features: [t("zones.formation.feat1"), t("zones.formation.feat2"), t("zones.formation.feat3"), t("zones.formation.feat4")],
+      color: "accent",
+    },
+    {
+      icon: Building,
+      name: t("zones.institution.name"),
+      percentage: "20%",
+      features: [t("zones.institution.feat1"), t("zones.institution.feat2"), t("zones.institution.feat3"), t("zones.institution.feat4")],
+      color: "purple",
+    },
+    {
+      icon: Coffee,
+      name: t("zones.services.name"),
+      percentage: "15%",
+      features: [t("zones.services.feat1"), t("zones.services.feat2"), t("zones.services.feat3"), t("zones.services.feat4")],
+      color: "earth",
+    },
+  ];
+
   return (
     <section className="py-24 bg-foreground text-primary-foreground overflow-hidden">
       <div className="container mx-auto px-4">
@@ -43,10 +47,10 @@ export function ZonesSection() {
           className="text-center mb-16"
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Village <span className="text-accent">FIAA 2026</span>
+            {t("zones.title").split('FIAA')[0]} <span className="text-accent">FIAA 2026</span>
           </h2>
           <p className="text-lg text-primary-foreground/70 max-w-2xl mx-auto">
-            Agbélouvé - Un espace de 4 zones thématiques conçues pour maximiser les rencontres et les opportunités.
+            {t("zones.subtitle")}
           </p>
         </motion.div>
 

@@ -4,58 +4,62 @@ import { Sprout, Rocket, Building2, Users, Newspaper, ArrowRight } from "lucide-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const profiles = [
-  {
-    icon: Sprout,
-    title: "Agriculteurs",
-    description: "Accédez aux dernières technologies agricoles et bénéficiez de formations gratuites sur les outils digitaux.",
-    badge: "Badge Vert",
-    benefits: ["Formation gratuite", "Kits technologiques", "Networking"],
-    color: "emerald",
-  },
-  {
-    icon: Rocket,
-    title: "Startups Agritech",
-    description: "Présentez vos solutions innovantes, participez au pitch contest et connectez-vous avec des investisseurs.",
-    badge: "Badge Bleu",
-    benefits: ["Stand exposition", "Pitch contest", "Accès investisseurs"],
-    color: "blue",
-  },
-  {
-    icon: Building2,
-    title: "Partenaires & Sponsors",
-    description: "Maximisez votre visibilité et générez des leads qualifiés avec nos packages premium personnalisés.",
-    badge: "Badge Or/Argent",
-    benefits: ["Analytics temps réel", "Branding premium", "Base de données"],
-    color: "gold",
-  },
-  {
-    icon: Users,
-    title: "Institutions",
-    description: "Renforcez votre engagement dans la transformation agricole africaine et nouez des partenariats stratégiques.",
-    badge: "Badge Violet",
-    benefits: ["Prise de parole", "Networking VIP", "Visibilité"],
-    color: "purple",
-  },
-  {
-    icon: Newspaper,
-    title: "Médias & Presse",
-    description: "Couvrez l'événement phare de l'innovation agricole africaine avec un accès privilégié.",
-    badge: "Badge Jaune",
-    benefits: ["Accréditation", "Accès privilégié", "Contenu exclusif"],
-    color: "yellow",
-  },
-];
-
-const colorClasses = {
-  emerald: "bg-emerald-600/10 text-emerald-600 border-emerald-600/20",
-  blue: "bg-blue-600/10 text-blue-600 border-blue-600/20",
-  gold: "bg-accent/10 text-accent border-accent/20",
-  purple: "bg-purple-600/10 text-purple-600 border-purple-600/20",
-  yellow: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-};
+import { useLanguage } from "@/context/LanguageContext";
 
 export function ProfilesSection() {
+  const { t } = useLanguage();
+
+  const profiles = [
+    {
+      icon: Sprout,
+      title: t("profiles.agriculteur.title"),
+      description: t("profiles.agriculteur.desc"),
+      badge: t("profiles.agriculteur.badge"),
+      benefits: t("profiles.agriculteur.title").includes("Farmer") ? ["Free Training", "Tech Kits", "Networking"] : ["Formation gratuite", "Kits technologiques", "Networking"],
+      color: "emerald",
+    },
+    {
+      icon: Rocket,
+      title: t("profiles.startup.title"),
+      description: t("profiles.startup.desc"),
+      badge: t("profiles.startup.badge"),
+      benefits: t("profiles.startup.title").includes("Startup") ? ["Exhibition Stand", "Pitch contest", "Investor access"] : ["Stand exposition", "Pitch contest", "Accès investisseurs"],
+      color: "blue",
+    },
+    {
+      icon: Building2,
+      title: t("profiles.partenaire.title"),
+      description: t("profiles.partenaire.desc"),
+      badge: t("profiles.partenaire.badge"),
+      benefits: t("profiles.partenaire.title").includes("Partner") ? ["Real-time Analytics", "Premium Branding", "Database"] : ["Analytics temps réel", "Branding premium", "Base de données"],
+      color: "gold",
+    },
+    {
+      icon: Users,
+      title: t("profiles.institution.title"),
+      description: t("profiles.institution.desc"),
+      badge: t("profiles.institution.badge"),
+      benefits: t("profiles.institution.title").includes("Institution") ? ["Speaking slot", "VIP Networking", "Visibility"] : ["Prise de parole", "Networking VIP", "Visibilité"],
+      color: "purple",
+    },
+    {
+      icon: Newspaper,
+      title: t("profiles.media.title"),
+      description: t("profiles.media.desc"),
+      badge: t("profiles.media.badge"),
+      benefits: t("profiles.media.title").includes("Media") ? ["Accreditation", "Privileged access", "Exclusive content"] : ["Accréditation", "Accès privilégié", "Contenu exclusif"],
+      color: "yellow",
+    },
+  ];
+
+  const colorClasses = {
+    emerald: "bg-emerald-600/10 text-emerald-600 border-emerald-600/20",
+    blue: "bg-blue-600/10 text-blue-600 border-blue-600/20",
+    gold: "bg-accent/10 text-accent border-accent/20",
+    purple: "bg-purple-600/10 text-purple-600 border-purple-600/20",
+    yellow: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+  };
+
   return (
     <section className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
@@ -66,10 +70,14 @@ export function ProfilesSection() {
           className="text-center mb-16"
         >
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Un événement pour <span className="text-primary">tous les acteurs</span>
+            {t("profiles.title").split('?')[0]} <span className="text-primary">{t("profiles.title").includes('?') ? '?' : ''}</span>
+          </h2>
+          {/* Simple workaround for title spanning */}
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            {t("profiles.title").replace("tous les acteurs", "")} <span className="text-primary">{t("profiles.title").includes("tous les acteurs") ? "tous les acteurs" : ""}</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Chaque profil dispose d'un parcours personnalisé, d'un badge spécifique et d'avantages exclusifs.
+            {t("profiles.subtitle")}
           </p>
         </motion.div>
 
@@ -126,7 +134,7 @@ export function ProfilesSection() {
         >
           <Button size="lg" asChild>
             <Link to="/inscription">
-              Choisir mon profil
+              {t("hero.cta.register")}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </Button>
