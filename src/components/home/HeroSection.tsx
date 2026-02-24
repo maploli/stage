@@ -69,7 +69,7 @@ export function HeroSection() {
             </div>
             <div className="flex items-center gap-2 text-primary-foreground/90">
               <MapPin className="w-5 h-5 text-accent" />
-              <span>Agbélouvé, Togo</span>
+              <span>Badja, Togo</span>
             </div>
             <div className="flex items-center gap-2 text-primary-foreground/90">
               <Users className="w-5 h-5 text-accent" />

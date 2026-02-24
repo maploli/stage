@@ -171,7 +171,7 @@ const Contact = () => {
                       <div>
                         <div className="font-medium text-foreground">Adresse</div>
                         <div className="text-sm text-muted-foreground">
-                          Agbélouvé, Région Maritime<br />Togo
+                          Badja , Région Maritime<br />Togo
                         </div>
                       </div>
                     </li>

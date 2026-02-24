@@ -46,7 +46,7 @@ export function ZonesSection() {
             Village <span className="text-accent">FIAA 2026</span>
           </h2>
           <p className="text-lg text-primary-foreground/70 max-w-2xl mx-auto">
-            Agbélouvé - Un espace de 4 zones thématiques conçues pour maximiser les rencontres et les opportunités.
+            Badja - Un espace de 4 zones thématiques conçues pour maximiser les rencontres et les opportunités.
           </p>
         </motion.div>
 

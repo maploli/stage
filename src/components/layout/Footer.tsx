@@ -83,7 +83,7 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-0.5 text-accent" />
                 <span className="text-primary-foreground/70 text-sm">
-                  Agbélouvé, Région Maritime, Togo
+                  Badja, Région Maritime, Togo
                 </span>
               </li>
               <li className="flex items-center gap-3">
