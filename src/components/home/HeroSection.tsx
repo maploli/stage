@@ -43,8 +43,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-primary-foreground leading-tight mb-6"
           >
-            Festival International de l'{" "}
-            <span className="text-accent">Agriculture</span> & de l'Agroalimentaire
+            Festival des Innovations <span className="text-accent">Agricole</span> & Agritech
           </motion.h1>
 
           <motion.p
