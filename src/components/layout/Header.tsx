@@ -5,6 +5,8 @@ import { Menu, X, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import logoFiaa from "@/assets/logo-fiaa.png";
+
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
@@ -25,12 +27,12 @@ export function Header() {
       <nav className="relative container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-emerald group-hover:scale-105 transition-transform">
-            <Leaf className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-lg text-foreground leading-none">FIAA</span>
-            <span className="text-xs text-muted-foreground">2026</span>
+          <div className="h-12 w-auto group-hover:scale-105 transition-transform">
+            <img 
+              src={logoFiaa} 
+              alt="FIAA Logo" 
+              className="h-full w-auto object-contain"
+            />
           </div>
         </Link>
 

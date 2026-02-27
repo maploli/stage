@@ -110,7 +110,7 @@ export function HeroSection() {
               { value: "30+", label: "Startups Agritech" },
               { value: "500", label: "Agriculteurs formés" },
               { value: "15+", label: "Partenariats" },
-              { value: "100M", label: "FCFA d'investissements" },
+              { value: "100 millions", label: "FCFA d'investissements" },
             ].map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="font-display text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
