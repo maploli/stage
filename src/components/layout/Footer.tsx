@@ -17,6 +17,10 @@ export function Footer() {
                   className="h-full w-auto object-contain brightness-0 invert" 
                 />
               </div>
+              <div className="flex flex-col">
+                <span className="font-display font-bold text-lg leading-none">FIAA</span>
+                <span className="text-xs text-primary-foreground/60">2026</span>
+              </div>
             </div>
             <p className="text-primary-foreground/70 text-sm leading-relaxed">
               Festival des Innovations Agricole et Agritech - Connecter la Terre et la Tech pour une Agriculture Africaine d'Avenir.

@@ -27,12 +27,16 @@ export function Header() {
       <nav className="relative container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="h-12 w-auto group-hover:scale-105 transition-transform">
+          <div className="h-12 w-auto group-hover:scale-105 transition-transform text-foreground">
             <img 
               src={logoFiaa} 
               alt="FIAA Logo" 
               className="h-full w-auto object-contain"
             />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-display font-bold text-lg text-foreground leading-none">FIAA</span>
+            <span className="text-xs text-muted-foreground">2026</span>
           </div>
         </Link>
 
