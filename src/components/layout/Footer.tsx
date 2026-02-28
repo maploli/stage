@@ -14,7 +14,7 @@ export function Footer() {
                 <img 
                   src={logoFiaa} 
                   alt="FIAA Logo" 
-                  className="h-full w-auto object-contain brightness-0 invert" 
+                  className="h-full w-auto object-contain mix-blend-screen" 
                 />
               </div>
               <div className="flex flex-col">
